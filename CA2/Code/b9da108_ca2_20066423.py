@@ -119,12 +119,12 @@ print("\nDataset Summary")
 print(df.describe(include="all"))
 print("="*70)
 
-# Check for missing values
+# Missing values
 print("\nMissing values")
 print(df.isnull().sum())
 print("="*70)
 
-# Check for duplicate reviews
+# Duplicate reviews
 duplicate_count = df.duplicated().sum()
 print(f"\nNumber of duplicate reviews: {duplicate_count}")
 
@@ -141,13 +141,13 @@ def clean_text(text):
         str: Cleaned text.
     """
 
-    # Convert to lowercase
+    # lowercase
     text = text.lower()
-    # Remove html tags (e.g., <br />)
+    # html tags (e.g., <br />)
     text = re.sub(r'<.*?>', '', text)
-    # Remove punctuation
+    # punctuation
     text = re.sub(r'[^\w\s]', '', text)
-    # Remove extra whitespace
+    # extra whitespace
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
@@ -170,7 +170,7 @@ def preprocess_reviews(df):
     return df_cleaned
 
 df_cleaned = preprocess_reviews(df)
-display(df_cleaned[['review', 'cleaned_review']].head(8))
+df_cleaned[['review', 'cleaned_review']].head(8)
 
 """## **Exploratory Data Analysis (EDA)**
 
@@ -178,7 +178,7 @@ display(df_cleaned[['review', 'cleaned_review']].head(8))
 In this section, we are analyzing the distribution of sentiment labels (positive vs. negative) in the dataset. We will create a bar chart to show the count of reviews for each sentiment.
 """
 
-# Calculate counts and percentages for each sentiment
+# Calculate counts and percentage for both sentiment
 sentiment_counts = df_cleaned['sentiment'].value_counts()
 sentiments = sentiment_counts.index.tolist()
 counts = sentiment_counts.values.tolist()
@@ -188,12 +188,12 @@ print("Sentiment Distribution:\n", sentiment_counts)
 print("\nPercentage Distribution:\n", (percentages.astype(str) + "%"))
 print("\n\n")
 
-# Create ColumnDataSource from the data
+# Create ColumnDataSource
 source = ColumnDataSource(data=dict(
     sentiment=sentiments,
     count=counts,
     percentage=percentages.tolist(),
-    color=['#B0FC38' if sentiment == 'positive' else '#E3242B' for sentiment in sentiments]
+    color=['#B0FC38' if s == 'positive' else '#E3242B' for s in sentiments]
 ))
 
 # Create interactive Bokeh figure
@@ -203,13 +203,13 @@ p = figure(x_range=sentiments, height=400, width=600,
 
 p.vbar(x='sentiment', top='count', width=0.5, source=source, fill_color="color")
 
-# Add hover tool to display details
+# Add hover tool
 hover = HoverTool(tooltips=[("Sentiment", "@sentiment"),
                             ("Count", "@count"),
                             ("Percentage", "@percentage%")])
 p.add_tools(hover)
 
-# Customize plot appearance
+# Customize plot
 p.xgrid.grid_line_color = None
 p.y_range.start = 0
 p.xaxis.axis_label = "Sentiment"
@@ -230,7 +230,7 @@ show(p)
 This section generates word clouds to visualize the most frequent words used in positive and negative reviews.
 """
 
-# Combine all cleaned reviews into one string
+# Combine all reviews
 positive_reviews = " ".join(df_cleaned[df_cleaned['sentiment'] == "positive"]['cleaned_review'])
 negative_reviews = " ".join(df_cleaned[df_cleaned['sentiment'] == "negative"]['cleaned_review'])
 
@@ -238,12 +238,12 @@ print("Total number of words in positive reviews:", len(positive_reviews.split()
 print("Total number of words in negative reviews:", len(negative_reviews.split()))
 print("\n" + "="*50)
 
-def get_top_words(reviews):
+def top_words(reviews):
     """
-    Returns the top most common words from reviews, excluding stopwords.
+    Returns the top 10 most common words from reviews, excluding stopwords.
 
     Args:
-        reviews (str): Combined text of all reviews for a sentiment.
+        reviews (str): Combined text of all reviews.
 
     Returns:
         list: Top words and their counts.
@@ -253,8 +253,8 @@ def get_top_words(reviews):
 
 # Top words for both sentiments
 top_words = {
-    "Positive": get_top_words(positive_reviews),
-    "Negative": get_top_words(negative_reviews)
+    "Positive": top_words(positive_reviews),
+    "Negative": top_words(negative_reviews)
 }
 
 for sentiment, words in top_words.items():
@@ -262,9 +262,9 @@ for sentiment, words in top_words.items():
     for word, count in words:
         print(f"{word}: {count}")
 
-def generate_wordcloud(reviews, title):
+def create_wordcloud(reviews, title):
     """
-    Generates and displays a word cloud for the given review text.
+    Displays a word cloud for the given review.
 
     Args:
         reviews (str): Combined text of all reviews for a sentiment.
@@ -281,10 +281,10 @@ def generate_wordcloud(reviews, title):
     plt.title(title, fontsize=16)
     plt.show()
 
-# Generate word clouds for both sentiments
-generate_wordcloud(positive_reviews, "Word Cloud for Positive Reviews")
+# Create word clouds for both sentiments
+create_wordcloud(positive_reviews, "Word Cloud for Positive Reviews")
 print("\n\n")
-generate_wordcloud(negative_reviews, "Word Cloud for Negative Reviews")
+create_wordcloud(negative_reviews, "Word Cloud for Negative Reviews")
 
 """#### **Most Common Words Insights**
 
@@ -296,18 +296,16 @@ generate_wordcloud(negative_reviews, "Word Cloud for Negative Reviews")
 In this section, we analyzed the review length to see if longer reviews tend to be of a specific sentiment by calculating word counts and visualizing trends.
 """
 
-# Calculate the review length
+# Calculate review length
 df_cleaned['review_length'] = df_cleaned['cleaned_review'].apply(lambda x: len(x.split()))
 
 print("Review Length Statistics:")
 print(df_cleaned['review_length'].describe())
 print("\n" + "="*80)
-review_length_stats = df_cleaned.groupby('sentiment')['review_length'].describe()
-print("\n", review_length_stats)
+print(df_cleaned.groupby('sentiment')['review_length'].describe())
 
 # Plot histogram of review lengths
 hist, edges = np.histogram(df_cleaned['review_length'], bins=50)
-max_length = df_cleaned['review_length'].max()
 source_hist = ColumnDataSource(data=dict(
     top=hist,
     left=edges[:-1],
@@ -323,8 +321,10 @@ p_hist = figure(title="Distribution of Review Lengths",
 p_hist.quad(top='top', bottom=0, left='left', right='right', source=source_hist,
             fill_color="limegreen", line_color="black", alpha=0.7)
 
-# Add hover tool to display details
-hover_hist = HoverTool(tooltips=[("Range", "@left{0} to @right{0}"), ("Count", "@top")])
+# Add hover tool
+hover_hist = HoverTool(tooltips=[("Range",
+                                  "@left{0} to @right{0}"),
+                                   ("Count", "@top")])
 p_hist.add_tools(hover_hist)
 
 # Display histogram
@@ -333,11 +333,11 @@ show(p_hist)
 # Count reviews with lengths between 100-150 words
 reviews_100_150 = df_cleaned[(df_cleaned['review_length'] >= 100) & (df_cleaned['review_length'] <= 150)].shape[0]
 
-# Count reviews with lengths exceeding 1000 words
+# Count reviews with lengths more than 1000 words
 reviews_above_1000 = df_cleaned[df_cleaned['review_length'] > 1000].shape[0]
 
 print(f"Number of reviews between 100-150 words: {reviews_100_150}")
-print(f"Number of reviews exceeding 1000 words: {reviews_above_1000}")
+print(f"Number of reviews more than 1000 words: {reviews_above_1000}")
 
 """#### **Review Length Insights**
 
@@ -351,23 +351,23 @@ print(f"Number of reviews exceeding 1000 words: {reviews_above_1000}")
 We analyzed whether shorter reviews expressed more extreme sentiments or not by comparing sentiment polarity with the review length.
 """
 
-# Calculate sentiment polarity
+# Calculate polarity
 df_cleaned['polarity'] = df_cleaned['cleaned_review'].apply(lambda x: TextBlob(x).sentiment.polarity)
 
 print("Sentiment Polarity Statistics:")
 print(df_cleaned['polarity'].describe())
 print("\n")
 
-# Compute the correlation between review length and polarity
+# correlation between review length and polarity
 correlation = df_cleaned[['review_length', 'polarity']].corr()
 print("Correlation between Review Length and Sentiment Polarity:\n", correlation)
 print("\n")
 
-# Scatter plot: review length vs. sentiment polarity
+# Scatter plot
 plt.figure(figsize=(10, 6))
 sns.scatterplot(x='review_length', y='polarity', data=df_cleaned, alpha=0.5, color='#EC9006')
 plt.title("Review Length vs. Sentiment Polarity", fontsize=16)
-plt.xlabel("Review Length (Number of Words)", fontsize=14)
+plt.xlabel("Review Length", fontsize=14)
 plt.ylabel("Sentiment Polarity", fontsize=14)
 plt.show()
 
@@ -382,7 +382,7 @@ plt.show()
 We examine the overall sentiment polarity and subjectivity of reviews and visualize their distributions with histograms.
 """
 
-# Calculate sentiment subjectivity
+# Calculate subjectivity
 df_cleaned['subjectivity'] = df_cleaned['cleaned_review'].apply(lambda x: TextBlob(x).sentiment.subjectivity)
 
 print("Review Subjectivity Statistics:")
@@ -441,7 +441,7 @@ def plot_histogram(data, title, x_label, color):
 
     show(p)
 
-# Generate histograms for polarity and subjectivity
+# histograms for polarity and subjectivity
 plot_histogram(df_cleaned['polarity'], "Distribution of Sentiment Polarity", "Polarity", "green")
 print("\n")
 plot_histogram(df_cleaned['subjectivity'], "Distribution of Review Subjectivity", "Subjectivity", "orange")
@@ -454,7 +454,7 @@ plot_histogram(df_cleaned['subjectivity'], "Distribution of Review Subjectivity"
 * Highly polarized reviews are rare, with only **57** highly negative and **471** highly positive reviews.
 
 *Subjectivity Distribution:*
-* Most reviews **(59.8%)** are moderately subjective **(0.5 to 0.7)**, meaning reviews have opinions but are not exaggrated.
+* Most reviews **(59.8%)** are moderately subjective **(0.5 to 0.7)**, meaning reviews have opinions but are not exaggerated.
 * Only **0.88%** of reviews are extremely objective, meaning that purely factual reviews are rare.
 * Extremely subjective reviews **(3.6%)** are also uncommon, suggesting that most users provide a mix of opinion and fact.
 
@@ -464,20 +464,20 @@ Final Insight: Reviews tend to be opinionated but not overly extreme.
 Since the dataset does not have helpfulness ratings, we considered reviews with extreme sentiment or longer length as likely to be more detailed and helpful.
 """
 
-# Calculate absolute polarity to identify extreme sentiments
+# Absolute polarity to identify extreme sentiments
 df_cleaned['abs_polarity'] = df_cleaned['polarity'].abs()
 
-# Top 5 reviews with the most extreme sentiment
-top_extreme_reviews = df_cleaned.sort_values(by='abs_polarity', ascending=False).head(5)
+# Top 5 most extreme sentiment
+top_extreme = df_cleaned.sort_values(by='abs_polarity', ascending=False).head(5)
 print("Top 5 Reviews with Extreme Sentiment:\n")
-display(top_extreme_reviews[['review', 'cleaned_review', 'polarity', 'review_length']])
+display(top_extreme[['review', 'cleaned_review', 'polarity', 'review_length']])
 
-print("="*90)
+print("="*120)
 
 # Top 5 longest reviews
-top_long_reviews = df_cleaned.sort_values(by='review_length', ascending=False).head(5)
+top_long = df_cleaned.sort_values(by='review_length', ascending=False).head(5)
 print("\n\nTop 5 Longest Reviews:\n")
-display(top_long_reviews[['review', 'cleaned_review', 'review_length', 'polarity']])
+display(top_long[['review', 'cleaned_review', 'review_length', 'polarity']])
 
 """#### **Extreme and Detailed Reviews Insights**
 
